@@ -3,17 +3,10 @@ conebeam_projector
 ==================
 
 
-Add a short description here!
+This is the [CONRAD](https://github.com/akmaier/CONRAD) cone beam projector ported to pycuda.
+
+Usage
+-----
 
 
-Description
-===========
 
-A longer description of your project goes here...
-
-
-Note
-====
-
-This project has been set up using PyScaffold 3.2. For details and usage
-information on PyScaffold see https://pyscaffold.org/.
