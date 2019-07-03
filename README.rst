@@ -28,3 +28,20 @@ Usage
    pyconrad.imshow(sino, "Sinogram")
    backprojection = projector.backProjectPixelDrivenCuda(sino)
    pyconrad.imshow(backprojection, "backprojection")
+
+
+Configuration
+-------------
+
+Configuration of the projector geometry is done by (py)CONRAD.
+The first time you use it CONRAD will suggest you to create a global `Conrad.xml` in your home directory which stores all configuration options.
+You can launch `conrad` from bash command line to get a GUI load
+You can set the configuration programmatically via
+
+.. code:: python
+
+    import pyconrad.autoinit  # launches JVM
+    import pyconrad.config
+    this_is_the_configuration_obj = pyconrad.config.get_conf()
+
+This will give you a instance of CONRAD's `edu.stanford.rsl.conrad.utils.Configuration <https://github.com/akmaier/CONRAD/blob/master/src/edu/stanford/rsl/conrad/utils/Configuration.java>`_ class.
