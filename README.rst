@@ -34,8 +34,8 @@ Configuration
 -------------
 
 Configuration of the projector geometry is done by (py)CONRAD.
-The first time you use it CONRAD will suggest you to create a global `Conrad.xml` in your home directory which stores all configuration options.
-You can launch `conrad` from bash command line to get a GUI load
+The first time you use it CONRAD will suggest you to create a global :code:`Conrad.xml` in your home directory which stores all configuration options.
+You can launch :code:`conrad` from bash command line to get a GUI loaded.
 You can set the configuration programmatically via
 
 .. code:: python
