@@ -11,6 +11,7 @@ Install
 From this repo:
 
 .. code:: bash
+
     pip install -e .
 
 Usage
