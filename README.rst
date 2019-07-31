@@ -15,7 +15,7 @@ Install
 
    pip install conebeam-projector
 
-From this repo:
+Or from this repo:
 
 .. code:: bash
 
