@@ -1,10 +1,10 @@
-==================
-conebeam_projector
-==================
-
 .. image:: https://badge.fury.io/py/conebeam-projector.svg
    :target: https://badge.fury.io/py/conebeam-projector
    :alt: PyPI version
+
+==================
+conebeam_projector
+==================
 
 This is the `CONRAD <https://github.com/akmaier/CONRAD>`_ cone beam projector ported to pycuda.
 
