@@ -6,6 +6,11 @@ sudo: false
 language: python
 virtualenv:
   system_site_packages: false
+before_install:
+  - sudo apt-get install -y nvidia-cuda-toolkit
+addons:
+  apt:
+    update: true
 matrix:
   fast_finish: true
   include:
@@ -14,15 +19,11 @@ matrix:
     - env: DISTRIB="conda" PYTHON_VERSION="3.6" COVERAGE="false"
 install:
   - source tests/travis_install.sh
-  - pip install -r requirements.txt
-  # ^  DEPRECATION WARNING:
-  # The automatic creation of a `requirements.txt` file is deprecated.
-  # See `Dependency Management` in the docs for other options.
 before_script:
   - git config --global user.email "you@example.com"
   - git config --global user.name "Your Name"
 script:
-  - python setup.py develop
+  - pip install -e .
   - tox
   - |
     if [[ "$COVERAGE" == "true" ]]; then
