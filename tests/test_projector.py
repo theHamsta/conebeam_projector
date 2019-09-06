@@ -4,7 +4,7 @@
 """
 import os
 
-import mock
+import unittest.mock as mock
 import numpy as np
 import pyconrad.autoinit
 import pyconrad.config
