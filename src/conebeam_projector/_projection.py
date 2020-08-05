@@ -1,15 +1,15 @@
-import collections
+import collections.abc
 import os
 
 import numpy as np
-import pyconrad
-import pyconrad.config
-
 import pycuda.autoinit  # NOQA
 import pycuda.driver as cuda
 import pycuda.gpuarray as gpuarray
-from conebeam_projector._utils import divup, ndarray_to_float_tex
 from pycuda.compiler import SourceModule
+
+import pyconrad
+import pyconrad.config
+from conebeam_projector._utils import divup, ndarray_to_float_tex
 
 _SMALL_VALUE = 1e-12
 
@@ -79,7 +79,7 @@ class CudaProjector:
             read_data = f.read()
             f.closed
 
-        self._module_backprojection = SourceModule(read_data)
+        self._module_backprojection = SourceModule(read_data, options=['-Wno-deprecated-gpu-targets'])
         self._tex_backprojection = self._module_backprojection.get_texref(
             'tex_sino')
         self._kernel_backprojection = self._module_backprojection.get_function(
@@ -93,7 +93,7 @@ class CudaProjector:
             read_data = f.read()
         f.closed
 
-        self._module_forwardprojection = SourceModule(read_data)
+        self._module_forwardprojection = SourceModule(read_data, options=['-Wno-deprecated-gpu-targets'])
         self._kernel_forwardprojection = self._module_forwardprojection.get_function(
             "forwardProjectionKernel")
         self._tex_forwardprojection = self._module_forwardprojection.get_texref(
@@ -127,7 +127,7 @@ class CudaProjector:
                 ndarray_to_float_tex(
                     self._tex_forwardprojection, vol[t])
                 assert vol[t].dtype == np.float32
-            elif isinstance(vol, collections.Callable):
+            elif isinstance(vol, collections.abc.Callable):
                 ndarray_to_float_tex(
                     self._tex_forwardprojection, vol(t))
                 assert vol(t).dtype == np.float32
