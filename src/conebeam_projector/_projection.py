@@ -4,13 +4,12 @@ import os
 import numpy as np
 import pyconrad
 import pyconrad.config
+
 import pycuda.autoinit  # NOQA
 import pycuda.driver as cuda
 import pycuda.gpuarray as gpuarray
-from PIL import Image
-from pycuda.compiler import SourceModule
-
 from conebeam_projector._utils import divup, ndarray_to_float_tex
+from pycuda.compiler import SourceModule
 
 _SMALL_VALUE = 1e-12
 
@@ -428,6 +427,8 @@ def write_projections(vols: list, filename, proj_idx, do_compression=False):
 
     for vol, idx in zip(vols, range(len(vols))):
         projector.forward_project_cuda_idx(vol, sino_gpu, proj_idx)
+
+        from PIL import Image
         imlist.append(Image.fromarray(sino_gpu.get()))
 
     if do_compression:
