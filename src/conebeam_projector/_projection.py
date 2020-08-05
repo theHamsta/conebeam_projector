@@ -27,6 +27,7 @@ class CudaProjector:
         self.start_idx = 0
         self.forward_projection_stepsize = 1.
         self.stop_idx = self._num_projections
+        self._init_config()
 
     def _init_config(self):
         geo = pyconrad.config.get_geometry()
@@ -110,7 +111,7 @@ class CudaProjector:
 
         return _.SimpleOperators.subtract(currOrigin, centeredOffset)
 
-    def forward_project_cuda_raybased(self, vol, sino_gpu, use_maximum_intensity_projection=False):
+    def forward_project_cuda_raybased(self, vol, sino_gpu, use_maximum_intensity_projection=False, additive=False):
         self._check_config()
         assert sino_gpu.ndim == 3
 
@@ -158,6 +159,7 @@ class CudaProjector:
                 self._inv_AR_matrix_gpu,
                 np.int32(t),
                 np.int32(use_maximum_intensity_projection),
+                np.int32(additive),
                 grid=grid, block=block
             )
 
@@ -404,6 +406,7 @@ class CudaProjector:
         return vol
 
     def _check_config(self):
+        return
 
         if not self.is_configured:
             self._init_config()
