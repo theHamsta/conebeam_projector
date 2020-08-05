@@ -72,9 +72,7 @@ project_ray(float sx, float sy, float sz, // X-ray source position
     py = sy + minAlpha * ry;
     pz = sz + minAlpha * rz;
     pixel += 0.5 *
-             tex3D(gTex3D, px + 0.5, py + 0.5f,
-                   pz - gVolumeEdgeMinPoint2 -
-                       0.5); // read_imagef(gTex3D, sampler, (float4)(px + 0.5f,
+             tex3D(gTex3D, px + 0.5, py + 0.5f, pz + 0.5); // read_imagef(gTex3D, sampler, (float4)(px + 0.5f,
                              // py + 0.5f, pz - gVolumeEdgeMinPoint[2],0)).x;
     minAlpha += stepsize;
   }
@@ -92,7 +90,7 @@ project_ray(float sx, float sy, float sz, // X-ray source position
     // {
     // pixel += tex3D<float>(gTex3D, px , py , pz - gVolumeEdgeMinPoint2);
     pixel +=
-        tex3D(gTex3D, px + 0.5f, py + 0.5f, pz - gVolumeEdgeMinPoint2 - 0.5f);
+        tex3D(gTex3D, px + 0.5f, py + 0.5f, pz + 0.5f);
     // }
     minAlpha += stepsize;
   }
@@ -104,11 +102,11 @@ project_ray(float sx, float sy, float sz, // X-ray source position
   if (pixel > 0.0f) {
     pixel -=
         0.5 * stepsize *
-        tex3D(gTex3D, px + 0.5f, py + 0.5f, pz - gVolumeEdgeMinPoint2 - 5.5f);
+        tex3D(gTex3D, px + 0.5f, py + 0.5f, pz + 0.5f);
     minAlpha -= stepsize;
     float lastStepsize = maxAlpha - minAlpha;
     pixel +=
-        0.5 * lastStepsize * tex3D(gTex3D, px, py, pz - gVolumeEdgeMinPoint2);
+        0.5 * lastStepsize * tex3D(gTex3D, px+0.5f, py + 0.5f, pz + 0.5f);
 
     px = sx + maxAlpha * rx;
     py = sy + maxAlpha * ry;
@@ -117,7 +115,7 @@ project_ray(float sx, float sy, float sz, // X-ray source position
     // varying length.
     pixel +=
         0.5 * lastStepsize *
-        tex3D(gTex3D, px + 0.5f, py + 0.5f, pz - gVolumeEdgeMinPoint2 - 5.5f);
+        tex3D(gTex3D, px + 0.5f, py + 0.5f, pz + 0.5f);
   }
 
   // -------------------------------------------------------------------
