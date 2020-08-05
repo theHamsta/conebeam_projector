@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
     Setup file for conebeam_projector.
     Use setup.cfg to configure your project.
