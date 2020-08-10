@@ -23,6 +23,15 @@ project_ray(float sx, float sy, float sz, // X-ray source position
             float gVolumeEdgeMinPoint0, float gVolumeEdgeMinPoint1,
             float gVolumeEdgeMinPoint2, float gVolumeEdgeMaxPoint0,
             float gVolumeEdgeMaxPoint1, float gVolumeEdgeMaxPoint2) {
+
+  gVolumeEdgeMinPoint0 += 0.5;
+  gVolumeEdgeMinPoint1 += 0.5;
+  gVolumeEdgeMinPoint2 += 0.5;
+
+  gVolumeEdgeMaxPoint0 += 0.5;
+  gVolumeEdgeMaxPoint1 += 0.5;
+  gVolumeEdgeMaxPoint2 += 0.5;
+
   // Step 1: compute alpha value at entry and exit point of the volume
   float minAlpha, maxAlpha;
   minAlpha = 0;
@@ -71,9 +80,9 @@ project_ray(float sx, float sy, float sz, // X-ray source position
     px = sx + minAlpha * rx;
     py = sy + minAlpha * ry;
     pz = sz + minAlpha * rz;
-    pixel += 0.5 *
-             tex3D(gTex3D, px + 0.5, py + 0.5f, pz + 0.5); // read_imagef(gTex3D, sampler, (float4)(px + 0.5f,
-                             // py + 0.5f, pz - gVolumeEdgeMinPoint[2],0)).x;
+   pixel += 0.5 * tex3D(gTex3D, px + 0.5, py + 0.5f, pz + 0.5);
+    // read_imagef(gTex3D, sampler, (float4)(px + 0.5f,
+    // py + 0.5f, pz - gVolumeEdgeMinPoint[2],0)).x;
     minAlpha += stepsize;
   }
 
@@ -89,8 +98,7 @@ project_ray(float sx, float sy, float sz, // X-ray source position
     // else
     // {
     // pixel += tex3D<float>(gTex3D, px , py , pz - gVolumeEdgeMinPoint2);
-    pixel +=
-        tex3D(gTex3D, px + 0.5f, py + 0.5f, pz + 0.5f);
+    pixel += tex3D(gTex3D, px + 0.5f, py + 0.5f, pz + 0.5f);
     // }
     minAlpha += stepsize;
   }
@@ -100,13 +108,11 @@ project_ray(float sx, float sy, float sz, // X-ray source position
 
   // Last segment of the line
   if (pixel > 0.0f) {
-    pixel -=
-        0.5 * stepsize *
-        tex3D(gTex3D, px + 0.5f, py + 0.5f, pz + 0.5f);
+    pixel -= 0.5 * stepsize * tex3D(gTex3D, px + 0.5f, py + 0.5f, pz + 0.5f);
     minAlpha -= stepsize;
     float lastStepsize = maxAlpha - minAlpha;
     pixel +=
-        0.5 * lastStepsize * tex3D(gTex3D, px+0.5f, py + 0.5f, pz + 0.5f);
+        0.5 * lastStepsize * tex3D(gTex3D, px + 0.5f, py + 0.5f, pz + 0.5f);
 
     px = sx + maxAlpha * rx;
     py = sy + maxAlpha * ry;
@@ -114,8 +120,7 @@ project_ray(float sx, float sy, float sz, // X-ray source position
     // The last segment of the line integral takes care of the
     // varying length.
     pixel +=
-        0.5 * lastStepsize *
-        tex3D(gTex3D, px + 0.5f, py + 0.5f, pz + 0.5f);
+        0.5 * lastStepsize * tex3D(gTex3D, px + 0.5f, py + 0.5f, pz + 0.5f);
   }
 
   // -------------------------------------------------------------------
@@ -130,6 +135,16 @@ __device__ float project_ray_maximum_intensity(
     float gVolumeEdgeMinPoint0, float gVolumeEdgeMinPoint1,
     float gVolumeEdgeMinPoint2, float gVolumeEdgeMaxPoint0,
     float gVolumeEdgeMaxPoint1, float gVolumeEdgeMaxPoint2) {
+
+  gVolumeEdgeMinPoint0 += 0.5;
+  gVolumeEdgeMinPoint1 += 0.5;
+  gVolumeEdgeMinPoint2 += 0.5;
+
+  gVolumeEdgeMaxPoint0 += 0.5;
+  gVolumeEdgeMaxPoint1 += 0.5;
+  gVolumeEdgeMaxPoint2 += 0.5;
+
+
   // Step 1: compute alpha value at entry and exit point of the volume
   float minAlpha, maxAlpha;
   minAlpha = 0;
@@ -137,24 +152,24 @@ __device__ float project_ray_maximum_intensity(
 
   if (0.0f != rx) {
     float reci = 1.0f / rx;
-    float alpha0 = (gVolumeEdgeMinPoint0 - sx) * reci;
-    float alpha1 = (gVolumeEdgeMaxPoint0 - sx) * reci;
+    float alpha0 = (gVolumeEdgeMinPoint0 - sx - 0.5f) * reci;
+    float alpha1 = (gVolumeEdgeMaxPoint0 - sx - 0.5f) * reci;
     minAlpha = fmin(alpha0, alpha1);
     maxAlpha = fmax(alpha0, alpha1);
   }
 
   if (0.0f != ry) {
     float reci = 1.0f / ry;
-    float alpha0 = (gVolumeEdgeMinPoint1 - sy) * reci;
-    float alpha1 = (gVolumeEdgeMaxPoint1 - sy) * reci;
+    float alpha0 = (gVolumeEdgeMinPoint1 - sy - 0.5f) * reci;
+    float alpha1 = (gVolumeEdgeMaxPoint1 - sy - 0.5f) * reci;
     minAlpha = fmax(minAlpha, fmin(alpha0, alpha1));
     maxAlpha = fmin(maxAlpha, fmax(alpha0, alpha1));
   }
 
   if (0.0f != rz) {
     float reci = 1.0f / rz;
-    float alpha0 = (gVolumeEdgeMinPoint2 - sz) * reci;
-    float alpha1 = (gVolumeEdgeMaxPoint2 - sz) * reci;
+    float alpha0 = (gVolumeEdgeMinPoint2 - sz - 0.5f) * reci;
+    float alpha1 = (gVolumeEdgeMaxPoint2 - sz - 0.5f) * reci;
     minAlpha = fmax(minAlpha, fmin(alpha0, alpha1));
     maxAlpha = fmin(maxAlpha, fmax(alpha0, alpha1));
   }
@@ -179,9 +194,8 @@ __device__ float project_ray_maximum_intensity(
     py = sy + minAlpha * ry;
     pz = sz + minAlpha * rz;
     pixel = tex3D(gTex3D, px + 0.5, py + 0.5f,
-                  pz - gVolumeEdgeMinPoint2 -
-                      0.5); // read_imagef(gTex3D, sampler, (float4)(px + 0.5f,
-                            // py + 0.5f, pz - gVolumeEdgeMinPoint[2],0)).x;
+                  pz + 0.5); // read_imagef(gTex3D, sampler, (float4)(px + 0.5f,
+                             // py + 0.5f, pz - gVolumeEdgeMinPoint[2],0)).x;
     minAlpha += stepsize;
   }
 
@@ -197,9 +211,7 @@ __device__ float project_ray_maximum_intensity(
     // else
     // {
     // pixel += tex3D<float>(gTex3D, px , py , pz - gVolumeEdgeMinPoint2);
-    pixel = fmax(
-        tex3D(gTex3D, px + 0.5f, py + 0.5f, pz - gVolumeEdgeMinPoint2 - 0.5f),
-        pixel);
+    pixel = fmax(tex3D(gTex3D, px + 0.5f, py + 0.5f, pz + 0.5f), pixel);
     // }
     minAlpha += stepsize;
   }
@@ -208,22 +220,22 @@ __device__ float project_ray_maximum_intensity(
   // pixel *= stepsize;
 
   // Last segment of the line
-  // if ( pixel > 0.0f ) {
-  // 	pixel -=
-  // 			 tex3D( gTex3D, px + 0.5f, py + 0.5f, pz - gVolumeEdgeMinPoint2
-  // - 5.5f ); 	minAlpha -= stepsize; 	float lastStepsize = maxAlpha - minAlpha;
-  // 	pixel += 0.5 * lastStepsize *
-  // 			 tex3D( gTex3D, px, py, pz - gVolumeEdgeMinPoint2 );
+  if (pixel > 0.0f) {
+    pixel -= tex3D(gTex3D, px + 0.5f, py + 0.5f, pz + 0.5f - 0.5f);
+    minAlpha -= stepsize;
+    float lastStepsize = maxAlpha - minAlpha;
+    pixel +=
+        0.5 * lastStepsize * tex3D(gTex3D, px, py, pz - gVolumeEdgeMinPoint2);
 
-  // 	px = sx + maxAlpha * rx;
-  // 	py = sy + maxAlpha * ry;
-  // 	pz = sz + maxAlpha * rz;
-  // 	// The last segment of the line integral takes care of the
-  // 	// varying length.
-  // 	pixel += 0.5 * lastStepsize *
-  // 			 tex3D( gTex3D, px + 0.5f, py + 0.5f, pz - gVolumeEdgeMinPoint2
-  // - 5.5f );
-  // }
+    px = sx + maxAlpha * rx;
+    py = sy + maxAlpha * ry;
+    pz = sz + maxAlpha * rz;
+    // The last segment of the line integral takes care of the
+    // varying length.
+    pixel +=
+        0.5 * lastStepsize *
+        tex3D(gTex3D, px + 0.5f, py + 0.5f, pz - gVolumeEdgeMinPoint2 - 0.5f);
+  }
 
   // -------------------------------------------------------------------
 

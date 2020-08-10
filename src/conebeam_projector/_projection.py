@@ -2,11 +2,9 @@ import collections.abc
 import os
 
 import numpy as np
-import pycuda.autoinit  # NOQA
 import pycuda.driver as cuda
 import pycuda.gpuarray as gpuarray
 from pycuda.compiler import SourceModule
-
 import pyconrad
 import pyconrad.config
 from conebeam_projector._utils import divup, ndarray_to_float_tex

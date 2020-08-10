@@ -44,3 +44,4 @@ def ndarray_to_float_tex(tex_ref, ndarray, address_mode=cuda.address_mode.BORDER
         tex_ref, filter_mode)
     tex_ref.set_flags(tex_ref.get_flags(
     ) & ~cuda.TRSF_NORMALIZED_COORDINATES & ~cuda.TRSF_READ_AS_INTEGER)
+    return cu_array
