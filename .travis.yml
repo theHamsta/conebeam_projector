@@ -24,8 +24,7 @@ before_script:
   - git config --global user.name "Your Name"
 script:
   - pip install -e .
-  - tox
-  - |
+  - pytest
 after_success:
   - if [[ "$COVERAGE" == "true" ]]; then coveralls || echo "failed"; fi
 after_script:
