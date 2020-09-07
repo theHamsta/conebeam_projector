@@ -18,6 +18,16 @@ _ = pyconrad.ClassGetter(
 
 
 class CudaProjector:
+    _kernel_backprojection_withvesselmask = None
+    _module_backprojection = None
+    _tex_backprojection = None
+    _kernel_backprojection = None
+    _kernel_backprojection_withvesselmask = None
+    _kernel_backprojection_multiplicative = None
+    _module_forwardprojection = None
+    _kernel_forwardprojection = None
+    _tex_forwardprojection = None
+
     def __init__(self):
         self.is_configured = False
         self._manually_set_normalizer = None
@@ -75,29 +85,26 @@ class CudaProjector:
 # TODO: property for _manually_set_normalizer
 
     def _init_kernels(self):
-        with open(os.path.join(os.path.dirname(__file__), 'BackProjectionKernel.cu')) as f:
-            read_data = f.read()
-            f.closed
+        if not self._module_backprojection:
+            with open(os.path.join(os.path.dirname(__file__), 'BackProjectionKernel.cu')) as f:
+                read_data = f.read()
 
-        self._module_backprojection = SourceModule(read_data, options=['-Wno-deprecated-gpu-targets'])
-        self._tex_backprojection = self._module_backprojection.get_texref(
-            'tex_sino')
-        self._kernel_backprojection = self._module_backprojection.get_function(
-            "backProjectionKernel")
-        self._kernel_backprojection_withvesselmask = self._module_backprojection.get_function(
-            "backProjectionKernelWithConstrainingVolume")
-        self._kernel_backprojection_multiplicative = self._module_backprojection.get_function(
-            "backprojectMultiplicative")
+            self._module_backprojection = SourceModule(read_data, options=['-Wno-deprecated-gpu-targets'])
+            self._tex_backprojection = self._module_backprojection.get_texref(
+                'tex_sino')
+            self._kernel_backprojection = self._module_backprojection.get_function(
+                "backProjectionKernel")
+            self._kernel_backprojection_withvesselmask = self._module_backprojection.get_function(
+                "backProjectionKernelWithConstrainingVolume")
+            self._kernel_backprojection_multiplicative = self._module_backprojection.get_function(
+                "backprojectMultiplicative")
 
-        with open(os.path.join(os.path.dirname(__file__), 'ForwardProjectionKernel.cu')) as f:
-            read_data = f.read()
-        f.closed
+            with open(os.path.join(os.path.dirname(__file__), 'ForwardProjectionKernel.cu')) as f:
+                read_data = f.read()
 
-        self._module_forwardprojection = SourceModule(read_data, options=['-Wno-deprecated-gpu-targets'])
-        self._kernel_forwardprojection = self._module_forwardprojection.get_function(
-            "forwardProjectionKernel")
-        self._tex_forwardprojection = self._module_forwardprojection.get_texref(
-            'gTex3D')
+            self._module_forwardprojection = SourceModule(read_data, options=['-Wno-deprecated-gpu-targets'])
+            self._kernel_forwardprojection = self._module_forwardprojection.get_function("forwardProjectionKernel")
+            self._tex_forwardprojection = self._module_forwardprojection.get_texref('gTex3D')
 
     def _getOriginTransform(self):
         currOrigin = _.SimpleVector.from_list(self._origin)
@@ -118,9 +125,10 @@ class CudaProjector:
                                       **texture_kwargs):
         self._check_config()
         assert sino_gpu.ndim == 3
+        cu_array = None
 
         if isinstance(vol, gpuarray.GPUArray) or (isinstance(vol, np.ndarray) and vol.ndim == 3):
-            ndarray_to_float_tex(
+            cu_array = ndarray_to_float_tex(
                 self._tex_forwardprojection, vol, **texture_kwargs)
 
         block = (32, 8, 1)
@@ -129,11 +137,11 @@ class CudaProjector:
 
         for t in range(sino_gpu.shape[0]):
             if isinstance(vol, list) or (isinstance(vol, np.ndarray) and vol.ndim == 4):
-                ndarray_to_float_tex(
+                cu_array = ndarray_to_float_tex(
                     self._tex_forwardprojection, vol[t], **texture_kwargs)
                 assert vol[t].dtype == np.float32
             elif isinstance(vol, collections.abc.Callable):
-                ndarray_to_float_tex(
+                cu_array = ndarray_to_float_tex(
                     self._tex_forwardprojection, vol(t), **texture_kwargs)
                 assert vol(t).dtype == np.float32
             elif isinstance(vol, gpuarray.GPUArray) or (isinstance(vol, np.ndarray) and vol.ndim == 3):
@@ -166,9 +174,10 @@ class CudaProjector:
                 np.int32(additive),
                 grid=grid, block=block
             )
+        cu_array.free()
 
     def forward_project_cuda_idx(self, vol, sino_gpu, idx, use_maximum_intensity_projection=False, **texture_kwargs):
-        self._check_config()
+        # self._check_config()
 
         assert idx >= 0 and idx < self._num_projections, "Invalid projection index"
         assert sino_gpu.ndim == 2
@@ -251,7 +260,7 @@ class CudaProjector:
                                       multiplicative=False,
                                       **texture_kwargs):
 
-        self._check_config()
+        # self._check_config()
 
         assert projIdx >= 0 and projIdx < self._num_projections, "Invalid projection index"
         assert sino_gpu.ndim == 2
@@ -261,7 +270,7 @@ class CudaProjector:
         if constraining_vol:
             assert isinstance(constraining_vol, gpuarray.GPUArray)
 
-        ndarray_to_float_tex(self._tex_backprojection, sino_gpu, **texture_kwargs)
+        cu_array = ndarray_to_float_tex(self._tex_backprojection, sino_gpu, **texture_kwargs)
 
         block = (32, 8, 1)
         grid = (int(divup(vol_gpu.shape[2], block[0])),
@@ -339,6 +348,7 @@ class CudaProjector:
                                         np.float32(self._normalizer),
                                         grid=grid, block=block
                                         )
+        cu_array.free()
 
     def backProjectPixelDrivenCuda(self,
                                    sino: np.ndarray,
@@ -348,13 +358,13 @@ class CudaProjector:
                                    **texture_kwargs):
         assert sino.dtype == np.float32
 
-        self._check_config()
-
+        # self._check_config()
         if not vol:
             vol = np.zeros(self._volshape, np.float32)
 
         if isinstance(vol, gpuarray.GPUArray):
             vol_gpu = vol
+            assert vol_gpu.dtype == np.float32
         else:
             vol_gpu = cuda.mem_alloc(vol.nbytes)
 
@@ -365,7 +375,7 @@ class CudaProjector:
             if isinstance(vol, list) or vol.ndim == 4:
                 cuda.memcpy_htod(vol_gpu, vol[t])
 
-            ndarray_to_float_tex(self._tex_backprojection, sino[t], **texture_kwargs)
+            cu_array = ndarray_to_float_tex(self._tex_backprojection, sino[t], **texture_kwargs)
 
             block = (32, 8, 1)
             grid = (int(divup(self._volshape[2], block[0])),
@@ -414,6 +424,7 @@ class CudaProjector:
                                             np.float32(self._normalizer),
                                             grid=grid, block=block
                                             )
+            cu_array.free()
 
         if not isinstance(vol, gpuarray.GPUArray):
             cuda.memcpy_dtoh(vol, vol_gpu)
