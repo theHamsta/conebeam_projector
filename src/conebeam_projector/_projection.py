@@ -4,10 +4,13 @@ import os
 import numpy as np
 import pycuda.driver as cuda
 import pycuda.gpuarray as gpuarray
+from appdirs import user_cache_dir
+from joblib import Memory
 from pycuda.compiler import SourceModule
 
 import pyconrad
 import pyconrad.config
+import sympy as sp
 from conebeam_projector._utils import divup, ndarray_to_float_tex
 
 _SMALL_VALUE = 1e-12
@@ -15,6 +18,28 @@ _SMALL_VALUE = 1e-12
 _ = pyconrad.ClassGetter(
     'edu.stanford.rsl.conrad.numerics'
 )  # type: pyconrad.AutoCompleteConrad
+
+_cache_dir = user_cache_dir('conebeam_projector')
+_disk_cache = Memory(_cache_dir, verbose=0).cache
+
+
+
+@_disk_cache
+def _calculate_stuff(volume_origin, volume_spacing, projection_matrices):
+    inv_spacing = np.array([1 / s for s in volume_spacing],
+                           np.float32)
+    camera_centers = map(
+        lambda x: np.array(sp.Matrix(x).nullspace(), np.float32), projection_matrices)
+    source_points = map(
+        lambda x: (x[0, :3] / x[0, 3] * inv_spacing - np.array(
+            list(volume_origin)) * inv_spacing).astype(
+                np.float32), camera_centers)
+
+    inv_matrices = map(
+        lambda x:
+        (np.linalg.inv(x[:3, :3]) * inv_spacing).astype(np.float32),
+        projection_matrices)
+    return np.stack(list(inv_matrices)), np.stack(list(source_points))
 
 
 class CudaProjector:
@@ -57,8 +82,6 @@ class CudaProjector:
         for i in range(3):
             self._volumeEdgeMaxPoint.append(self._volumeSize[i] -
                                             1. - _SMALL_VALUE)
-            # self._volumeEdgeMaxPoint.append( self._volumeSize[i] -
-            #     0.5 - SMALL_VALUE)
 
         self._volumeEdgeMinPoint = []
         for i in range(3):
@@ -69,6 +92,11 @@ class CudaProjector:
         self._width = geo.getDetectorWidth()
         self._height = geo.getDetectorHeight()
         self._srcPoint = np.ndarray([3 * self._num_projections], np.float32)
+        self._invVoxelScale = _.SimpleMatrix(3, 3)
+        self._invVoxelScale.setElementValue(0, 0, 1.0 / self._voxelSize[0])
+        self._invVoxelScale.setElementValue(1, 1, 1.0 / self._voxelSize[1])
+        self._invVoxelScale.setElementValue(2, 2, 1.0 / self._voxelSize[2])
+
         self._invARmatrix = np.ndarray(
             [3 * 3 * self._num_projections], np.float32)
         for i in range(self._num_projections):
@@ -226,10 +254,6 @@ class CudaProjector:
         geo = pyconrad.config.get_geometry()
 
         proj = geo.getProjectionMatrices()[projIdx]
-        self._invVoxelScale = _.SimpleMatrix(3, 3)
-        self._invVoxelScale.setElementValue(0, 0, 1.0 / self._voxelSize[0])
-        self._invVoxelScale.setElementValue(1, 1, 1.0 / self._voxelSize[1])
-        self._invVoxelScale.setElementValue(2, 2, 1.0 / self._voxelSize[2])
 
         invARmatrixMat = proj.getRTKinv()
 
