@@ -176,7 +176,13 @@ class CudaProjector:
             )
         cu_array.free()
 
-    def forward_project_cuda_idx(self, vol, sino_gpu, idx, use_maximum_intensity_projection=False, **texture_kwargs):
+    def forward_project_cuda_idx(self,
+                                 vol,
+                                 sino_gpu,
+                                 idx,
+                                 use_maximum_intensity_projection=False,
+                                 additive=False,
+                                 **texture_kwargs):
         # self._check_config()
 
         assert idx >= 0 and idx < self._num_projections, "Invalid projection index"
@@ -217,7 +223,7 @@ class CudaProjector:
             self._inv_AR_matrix_gpu,
             np.int32(idx),
             np.int32(use_maximum_intensity_projection),
-            np.float32(0.1),
+            np.int32(additive),
             grid=grid, block=block
         )
 
